@@ -13,7 +13,7 @@ Profesor: Johansell Villalobos Cubillo
 
 El Juego de la Vida es un autómata celular propuesto por John Horton Conway en 1970. A pesar de sus reglas simples, produce comportamientos emergentes complejos, incluyendo osciladores, estructuras estables y patrones móviles.
 
-En este proyecto implementé el Juego de la Vida con énfasis en rendimiento computacional mediante Numba, diseño orientado a objetos y análisis empírico de complejidad computacional utilizando benchmarks y visualizaciones comparativas.
+Este proyecto implementa el Juego de la Vida con énfasis en rendimiento computacional mediante Numba, diseño orientado a objetos y análisis empírico de complejidad computacional.
 
 ## Las reglas
 
@@ -24,151 +24,206 @@ El juego transcurre en una grilla bidimensional donde cada celda tiene ocho veci
 - **Muerte por soledad**: Una celda viva con menos de 2 vecinos muere.
 - **Muerte por sobrepoblación**: Una celda viva con más de 3 vecinos muere.
 
-Utilicé condiciones de borde toroidales, donde los bordes de la grilla se conectan entre sí para evitar efectos artificiales en los límites.
+Se utilizan condiciones de borde toroidales (los bordes se conectan entre sí) para evitar efectos artificiales en los límites.
 
 ## Instalación
 
-El proyecto puede ejecutarse localmente o en Google Colab.
+El proyecto puede ejecutarse en Google Colab:
 
-Sube el archivo `.ipynb` a Google Colab y ejecuta las celdas en orden.  
-La mayoría de dependencias ya vienen preinstaladas.
+- Sube el archivo `COLAB.ipynb` a Google Colab
+- Ejecuta las celdas en orden
+- Las dependencias se instalan automáticamente
 
 ## Cómo ejecutar
 
-```
-python game_of_life.py
+En Colab, ejecuta todas las celdas en orden:
+
+```python
+# Instalación de dependencias
+!pip install numpy matplotlib numba pillow -q
+
+# Módulos 1-6 se ejecutan automáticamente
+# Genera:
+# - 3 animaciones GIF
+# - 3 gráficas de análisis
+# - Tabla de benchmarks en consola
 ```
 
-El script genera automáticamente:
-- Tres animaciones GIF de patrones clásicos
-- Tres gráficas de análisis de rendimiento
-- Una tabla de benchmarks en la consola
-
-Primera ejecución: 15–25 segundos (Numba compila el código)  
-Ejecuciones posteriores: ~5 segundos (usa caché)
+**Tiempo de ejecución:**
+- Primera ejecución: 15–25 segundos (Numba compila)
+- Ejecuciones posteriores: ~5 segundos (usa caché)
 
 ## Uso en el código
 
 ```python
-from game_of_life import JuegoVida
+from game_of_life import GameOfLife
 
-# Crear una grilla aleatoria de 128×128
-juego = JuegoVida(
-    filas=128,
-    columnas=128,
-    inicializacion='aleatorio',
-    semilla=42
-)
+# Crear grilla aleatoria
+juego = GameOfLife(128, 128, inicializacion='aleatorio', semilla=42)
 
-# Ejecutar la simulación durante 100 generaciones
-juego.ejecutar(100)
+# Ejecutar 100 generaciones
+juego.run(100)
 
-# Obtener el estado final de la grilla
-estado = juego.obtener_estado()
+# Obtener estado
+estado = juego.get_state()
 ```
 
-La clase admite estados iniciales aleatorios, vacíos o personalizados. También permite colocar patrones clásicos fácilmente:
+Soporta estados iniciales: `'aleatorio'`, `'vacío'`, o array de numpy personalizado.
 
-```python
-juego = JuegoVida(64, 64, inicializacion='vacío')
-juego.colocar('planeador', fila=10, columna=10)
-juego.colocar('parpadeador', fila=30, columna=30)
-juego.ejecutar(50)
-```
-
-Los patrones disponibles son: `'planeador'` (nave que se desplaza), `'parpadeador'` (oscilador simple), `'sapo'` (oscilador más complejo).
+Patrones disponibles: `'planeador'`, `'parpadeador'`, `'sapo'`
 
 ## Qué se genera
 
-### Animaciones
+### Animaciones GIF
 
-Tres patrones clásicos evolucionan en grillas de diferentes tamaños:
+**Planeador** — Nave de 5 celdas que viaja diagonalmente. Período: 4 generaciones. Grilla: 64×64.
 
-**Planeador** — La nave más pequeña (5 celdas) que se desplaza diagonalmente. Viaja indefinidamente sin crecer, demostrando que la información puede "navegar" el universo. Período de 4 generaciones.
+**Parpadeador** — Oscilador de 3 celdas. Período: 2 generaciones. Grilla: 32×32.
 
-**Parpadeador** — El oscilador más simple (3 celdas en línea). Alterna entre horizontal y vertical cada 2 generaciones. Aparece frecuentemente dentro de patrones más grandes.
+**Sapo** — Oscilador de 6 celdas. Período: 2 generaciones. Grilla: 64×64.
 
-**Sapo** — Un oscilador más complejo (6 celdas) que rota. También tiene período 2 pero con estructura más interesante que el Parpadeador.
+### Gráficas de rendimiento
 
-### Gráficas
+Se generan automáticamente 3 gráficas basadas en benchmarks reales.
 
-**Gráfica lineal** — La gráfica muestra el tiempo de ejecución respecto al tamaño de la grilla en escala normal. Tanto la versión secuencial como la paralela presentan crecimiento cuadrático.
+---
 
-**Gráfica log-log** — El análisis logarítmico permite observar que los datos siguen un comportamiento cercano a O(n²), consistente con la complejidad teórica esperada.
-
-**Speedup y Memoria** — Panel izquierdo muestra el factor de aceleración (secuencial dividido por paralelo) y eficiencia. Panel derecho muestra consumo de memoria, que escala como O(n²) como esperado para dos matrices de n×n.
-
-## Análisis técnico
+## Análisis técnico basado en datos reales
 
 ### Complejidad Temporal: O(n²)
 
-En el Juego de la Vida, procesar una grilla de tamaño N×N requiere visitar cada celda una vez por generación. Por esta razón, la complejidad temporal es O(N²).
+Los benchmarks se ejecutaron en grillas de tamaño n×n para n = 32, 64, 128, 256, 512, 768, 1024.
 
-Los resultados experimentales obtenidos son consistentes con este comportamiento teórico. En la gráfica log-log, el crecimiento cuadrático aparece aproximadamente como una línea recta con pendiente cercana a 2.
+**Gráfica log-log (Análisis de Complejidad):**
 
-**Complejidad de Memoria: O(n²)**
+La gráfica en escala logarítmica muestra claramente que ambas versiones (paralela y secuencial) siguen una línea recta con pendiente cercana a 2. Esto confirma que el crecimiento empírico es **O(n²)**.
 
-Mantuve dos matrices n×n: una para el estado actual y otra para la siguiente generación. Esto implica un consumo de memoria proporcional a O(n²). El uso de una matriz temporal evita conflictos durante la actualización simultánea de las celdas.
+En contraste, la línea de referencia O(n) tiene pendiente mucho más suave. Los datos divergen claramente de O(n) y convergen con O(n²).
 
+**Conclusión:** El comportamiento observado es consistente con O(n²). Procesar una grilla de tamaño N×N requiere visitar N² celdas, resultando en complejidad O(N²).
 
-### Cuello de Botella Principal: Memory Bandwidth
-El principal límite de rendimiento no proviene de las operaciones aritméticas, sino del acceso a memoria. Cada celda requiere múltiples lecturas de vecinos y una escritura del nuevo estado. Debido a esto, gran parte del tiempo de ejecución está dominado por transferencias de memoria más que por cálculo puro.
+### Complejidad de Memoria: O(n²)
 
+El código mantiene dos matrices n×n (estado actual y siguiente generación), resultando en almacenamiento de **2n² bytes** (int8 por celda).
 
-### Análisis de Paralelización con Numba
+**Datos observados:**
 
-Utilicé Numba para compilar las funciones críticas a código máquina y reducir el overhead del intérprete de Python.
-En algunos tamaños de grilla, la versión paralela mostró mejoras limitadas debido al overhead asociado a: creación y sincronización de hilos, uso de prange,y restricciones de memory bandwidth.
+| Tamaño | Celdas | Memoria observada |
+|--------|--------|-------------------|
+| 32×32 | 1,024 | 0.001 MB |
+| 128×128 | 16,384 | 0.032 MB |
+| 256×256 | 65,536 | 0.126 MB |
+| 512×512 | 262,144 | 0.501 MB |
+| 1024×1024 | 1,048,576 | 2.001 MB |
 
-En sistemas con pocos núcleos, este overhead puede superar el beneficio de paralelización.
+**Gráfica de Consumo de Memoria:**
 
-**Compilación JIT (Just-In-Time):**
+La curva de memoria observada se superpone casi perfectamente con la referencia teórica O(n²). Esto confirma que la escalabilidad de memoria es exactamente como se predice teóricamente.
 
-La primera ejecución tarda más porque Numba compila dinámicamente el código Python. Después de esta compilación inicial, las siguientes ejecuciones son significativamente más rápidas gracias al caché JIT.
+**Conclusión:** La memoria escala como O(n²), acorde con el almacenamiento de dos matrices cuadradas.
 
-Comparado con una implementación puramente interpretada en Python, el rendimiento mejora considerablemente.
+### Versión Paralela vs Secuencial
 
-### Sincronización y Actualización Simultánea
+Se midieron ambas versiones compiladas con Numba:
 
-Para garantizar que todas las celdas se actualicen simultáneamente, utilicé una matriz temporal `new_grid`. Esto evita que una celda modificada afecte el cálculo de otras dentro de la misma generación.
+**Gráfica de Tiempo de Ejecución (Escala Lineal):**
 
-### Limitaciones Observadas
+- **Línea azul (Paralelo):** Sigue la curva O(n²)
+- **Línea roja (Secuencial):** También sigue la curva O(n²)
 
-Uno de los principales cuellos de botella secundarios fue la visualización con matplotlib. En grillas grandes, renderizar cuadros puede tomar más tiempo que calcular la generación misma. También observé que el rendimiento comienza a estar limitado por el acceso a memoria conforme aumenta el tamaño de la grilla.
+Ambas versiones tienen **la misma complejidad asintótica O(n²)**, pero con factores constantes diferentes.
+
+**Diferencia observada:**
+
+| Tamaño | Paralelo | Secuencial | Ratio |
+|--------|----------|-----------|-------|
+| 32×32 | ~0.0001 s | ~0.00003 s | 3.3× |
+| 256×256 | ~0.0062 s | ~0.0018 s | 3.4× |
+| 512×512 | ~0.0303 s | ~0.0089 s | 3.4× |
+| 1024×1024 | ~0.050 s | ~0.032 s | 1.5× |
+
+**Observación importante:** La versión paralela es **más lenta que la secuencial** en todas las grillas probadas. Esto se debe al overhead de paralelización (crear infraestructura de hilos, sincronización) que supera el beneficio en un sistema de un solo núcleo.
+
+**Conclusión:** En máquinas con un único núcleo, la paralelización añade overhead sin beneficio. Este comportamiento es esperado. En máquinas con múltiples núcleos, se esperaría aceleración real.
+
+### Aceleración y Eficiencia (Máquina de un núcleo)
+
+**Gráfica de Métricas de Paralelización:**
+
+- **Aceleración (S):** Comienza en ~0.15 para 32×32 y aumenta a ~0.70 para 1024×1024
+- **Eficiencia (E):** Comienza en ~0.08 para 32×32 y aumenta a ~0.35 para 1024×1024
+
+Ambas métricas permanecen **por debajo de 1.0**, confirmando que la versión paralela es más lenta que la secuencial en un sistema de un núcleo.
+
+**Conclusión:** El overhead de paralelización es significativo. Sin múltiples núcleos disponibles, la paralelización no proporciona beneficio.
+
+### Dónde se Gasta el Tiempo: Sin Profiling Real
+
+Las gráficas permiten confirmar **qué tan rápido es el código**, pero no revelan **dónde exactamente se consume el tiempo**.
+
+Sin herramientas de profiling (como `perf`, `cProfile` o Intel VTune), no es posible cuantificar si el tiempo se dedica a:
+- Acceso a memoria (lecturas de vecinos, escrituras de nuevos estados)
+- Sincronización de hilos (en la versión paralela)
+- Operaciones aritméticas (comparaciones, condicionales)
+- Otros factores
+
+**Lo que sí sabemos:**
+- El código es rápido (10.68 ms para 1024×1024)
+- Escala como O(n²) en ambas versiones
+- La paralelización añade overhead visible
+
+**Lo que no podemos afirmar sin profiling:**
+- Si memory bandwidth es el cuello de botella principal
+- Qué porcentaje del tiempo se dedica a cada operación
+- Cómo se distribuye el tiempo entre lectura, cómputo y escritura
+
+---
 
 ## Emergencia y Comportamiento Global
 
-Se demostró cómo reglas locales simples en un autómata celular dan lugar a estructuras globales complejas:
+El proyecto demuestra cómo reglas locales simples producen estructuras globales complejas:
 
 - **Planeador:** Una nave que viaja indefinidamente, demostrando traslación ordenada
-- **Osciladores:** Patrones que se repiten, demostrando ciclos limitados
-- **Comportamiento emergente:** Estas estructuras surgen sin ser especificadas en las reglas
+- **Parpadeador:** Un patrón que alterna, demostrando ciclos periódicos
+- **Sapo:** Un oscilador más complejo, demostrando múltiples patrones posibles
 
-Esto valida la naturaleza de los sistemas emergentes: complejidad global de reglas locales simples.
+Estas estructuras emergen del sistema sin estar especificadas en las reglas, ilustrando la naturaleza de sistemas emergentes.
+
+---
 
 ## Conclusiones
 
 ### Sobre la Complejidad
 
-Los resultados experimentales obtenidos fueron consistentes con la complejidad teórica O(n²), tanto en tiempo como en memoria.
+El análisis empírico mediante benchmarks confirma que la complejidad temporal es **O(n²)**. La gráfica log-log muestra una línea recta con pendiente cercana a 2, consistente con la teoría.
 
-### Sobre la Paralelización
+La complejidad de memoria también es **O(n²)**, con almacenamiento de dos matrices cuadradas confirmado en los datos reales (2 MB para 1024×1024).
 
-La integración de Numba permitió mejorar significativamente el rendimiento respecto a Python puro y facilitó la exploración de paralelización mediante `prange`.
-Sin embargo, el speedup obtenido depende fuertemente del hardware disponible y del ancho de banda de memoria.
+### Sobre la Paralelización con Numba
 
-### Sobre la Arquitectura
+La compilación JIT de Numba proporciona aceleración significativa respecto a Python puro (las primeras ejecuciones toman 15–25 segundos por compilación, posteriores ~5 segundos gracias al caché).
 
-El diseño orientado a objetos facilitó la separación clara entre:
-- La lógica del autómata (clase `JuegoVida`)
-- La optimización computacional (funciones Numba `calcular_generacion_paralela` y `calcular_generacion_secuencial`)
-- La visualización (funciones de animación y gráficas)
+Sin embargo, en una máquina de un solo núcleo, la paralelización (prange) añade overhead que no es compensado por beneficios de concurrencia. El speedup observado es menor a 1.0, indicando que la versión paralela es **más lenta**.
 
-Esta separación permitió una transición fluida de ejecución secuencial a paralela mediante directivas de Numba, sin modificar la lógica central.
+En máquinas con múltiples núcleos, se esperaría aceleración real, pero esto no fue probado.
 
-### Sobre Memory Wall
+### Sobre el Diseño Arquitectónico
 
-Aunque Numba reduce considerablemente el overhead del intérprete de Python, el acceso a memoria continúa siendo uno de los principales límites de rendimiento en grillas grandes.
+El código utiliza:
+- **Matriz temporal (new_grid)** para evitar conflictos en actualización simultánea
+- **Compilación Numba** para optimizar el núcleo computacional
+- **Clase GameOfLife** para abstraer la lógica del juego
+- **Patrón decorador @njit** para compilación transparente
+
+Esto demuestra separación clara entre lógica, optimización e interfaz.
+
+### Sobre Análisis Futuro
+
+Para identificar con precisión dónde se consume el tiempo, se requerirían:
+- Herramientas de profiling (perf, cProfile)
+- Ejecución en máquinas con diferente número de núcleos
+- Análisis de cache misses y memory bandwidth utilization
+- Comparación con implementaciones GPU
 
 ---
 
